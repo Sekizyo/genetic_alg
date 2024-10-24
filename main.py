@@ -78,18 +78,25 @@ class Window():
         return output
 
     def plot_table(self, data: list[int]) -> None:
-        columns = ["LP", "x_real", "x_int", "x_bin", "x_int", "x_real", "f(x)"]
+        columns = ["LP", "x_real", "x_int", "x_bin", "x_int2", "x_real2", "f(x)"]
         
-        tree = ttk.Treeview(self.root, columns=columns, show="headings", height=20)
+        tree = ttk.Treeview(self.root, columns=columns, show="headings", height=10)
 
         for col in columns:
             tree.heading(col, text=col)
-            tree.column(col, anchor="center", width=100)
+            tree.column(col, anchor="center", width=120)  # Set appropriate width
         
         for row in data:
             tree.insert("", tk.END, values=row)
 
-        tree.grid(row=10, column=0, columnspan=7, padx=20, pady=20)
+        tree.grid(row=10, column=0, columnspan=6, padx=10, pady=10)
+
+        vsb = ttk.Scrollbar(self.root, orient="vertical", command=tree.yview)
+        hsb = ttk.Scrollbar(self.root, orient="horizontal", command=tree.xview)
+        tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+
+        vsb.grid(row=10, column=6, sticky='ns')
+        hsb.grid(row=11, column=0, columnspan=6, sticky='ew')
 
     def calc(self) -> None:
         data = self.get_data()
