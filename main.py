@@ -13,7 +13,7 @@ class Window():
         return round(uniform(start, stop), step)
 
     def F(self, x: float, d: int):
-        return round((x % 1) * (math.cos(20 * math.pi * x) - math.sin(x)), d)
+        return (x % 1) * (math.cos(20 * math.pi * x) - math.sin(x))
 
     def x_real(self, x: float, a: int, b: int, l: int, d: int) -> float:
         return round(((x*(b-a))/(2**l-1))+a, d)
