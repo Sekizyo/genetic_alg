@@ -1,8 +1,8 @@
 import math
 import numpy as np
 from random import random, uniform
-# import tkinter as tk
-# from tkinter import ttk, Tk, Label, Entry
+import tkinter as tk
+from tkinter import ttk, Tk, Label, Entry
 
 class Individual():
     def __init__(self, id: int) -> None:
@@ -79,16 +79,17 @@ class Symulation():
         return population
     
     def selection(self, population: list[Individual]) -> list[Individual]:
-        total_fitness = 0
-        probabilities = []
-        for invidual in population:
-            total_fitness += invidual.fx
-            
-        for invidual in population:
-            probabilities.append(invidual.fx/total_fitness)
-            
+        min_fitness = min(individual.fx for individual in population)
+        if min_fitness < 0:
+            shift_value = abs(min_fitness)
+        else:
+            shift_value = 0
+
+        total_fitness = sum(individual.fx + shift_value for individual in population)
+
+        probabilities = [(individual.fx + shift_value) / total_fitness for individual in population]
+
         selected_population = np.random.choice(population, size=len(population), p=probabilities, replace=True)
-        
         return selected_population
     
     def mutation(self, population: list[Individual]) -> list[Individual]:
@@ -191,11 +192,10 @@ class Window():
         calc_button.grid(column=2, row=8)
         self.root.mainloop()
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
     # win = Window()
     # win.draw()
-symulation = Symulation(-4, 12, 10, 0.01, 2, 0.001, 0.5)
-print(vars(symulation))
-population = symulation.create_population()
-population = symulation.selection(population)
-population = symulation.mutation(population)
+    symulation = Symulation(-4, 12, 10, 0.01, 2, 0.001, 0.5)
+    population = symulation.create_population()
+    population = symulation.selection(population)
+    population = symulation.mutation(population)
