@@ -9,7 +9,10 @@ class Individual():
         self.id = id               # Unique identifier for the individual
         self.x_real = 0       # The real value of x (within the range [a, b])
         self.x_int = 0
-        self.fx = 0                # Fitness value (calculated using F(x))
+        self.fx = 0                # Evaluation value (calculated using F(x))
+        self.gx = 0          # Fitness value
+        self.p = 0
+        self.q = 0
         self.x_bin = ""           # Binary representation of the integer x
         self.new_x = 0             # New value of x after selection, crossover, and mutation
         
@@ -19,12 +22,21 @@ class Individual():
     def set_x_int(self, a: int, b: int, l: int) -> int:
         self.x_int = math.ceil((1/(b-a))*(self.x_real - a)*(2**l - 1))
     
-    def set_fitness(self) -> float:
+    def set_evaluation(self) -> float:
         self.fx = (self.x_real % 1) * (math.cos(20 * math.pi * self.x_real) - math.sin(self.x_real))
         
-    def set_x_bin(self, l: int):
+    def set_fitness(self, shift_value: float) -> float:
+        self.gx = self.fx + shift_value
+            
+    def set_x_bin(self, l: int) -> None:
         self.x_bin = format(self.x_int, f'0{l}b')
         
+    def set_p(self, total_fitness: float, shift_value: float) -> None:
+        self.p = (self.fx+shift_value)/total_fitness
+        
+    def set_q(self, q: float) -> None:
+        self.q = q
+            
     def get_x_real(self, x: float, a: int, b: int, l: int, d: int) -> float:
         return round(((x*(b-a))/(2**l-1))+a, d)
     
@@ -70,8 +82,8 @@ class Symulation():
             individual = Individual(i)
             individual.set_random_x(self.a, self.b, self.roundTo)
             individual.set_x_int(self.a, self.b, self.binSize)
+            individual.set_evaluation()
             individual.set_x_bin(self.binSize)
-            individual.set_fitness()
             print(vars(individual))
             
             population.append(individual)
@@ -86,11 +98,27 @@ class Symulation():
             shift_value = 0
 
         total_fitness = sum(individual.fx + shift_value for individual in population)
-
-        probabilities = [(individual.fx + shift_value) / total_fitness for individual in population]
-
+        
+        probabilities = []
+        for individual in population:
+            individual.set_fitness(shift_value)
+            individual.set_p(total_fitness, shift_value)
+            probabilities.append(individual.p)
+        
+        self.cumulative_distribution(population, probabilities)
+        
         selected_population = np.random.choice(population, size=len(population), p=probabilities, replace=True)
         return selected_population
+    
+    def cumulative_distribution(self, population: list[Individual], probabilities: list[float]) -> None:
+        cumulative_sum = 0
+
+        for i, q in enumerate(probabilities):
+            cumulative_sum += q
+            population[i].set_q(q)
+            
+    def mating_pool(self, population: list[Individual]) -> list[Individual]:
+        pass
     
     def mutation(self, population: list[Individual]) -> list[Individual]:
         mutations = []
@@ -198,4 +226,5 @@ if __name__ == "__main__":
     symulation = Symulation(-4, 12, 10, 0.01, 2, 0.001, 0.5)
     population = symulation.create_population()
     population = symulation.selection(population)
-    population, count = symulation.mutation(population)
+    population = symulation.mating_pool(population)
+    # population, count = symulation.mutation(population)
