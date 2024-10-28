@@ -94,10 +94,10 @@ class Symulation():
     
     def mutation(self, population: list[Individual]) -> list[Individual]:
         mutations = []
-        for invidual in population:
-            mutation = invidual.mutate(self.p)
+        for i, individual in enumerate(population):
+            mutation = individual.mutate(self.p)
             if mutation > 0:
-                mutations.append(mutation)
+                mutations.append((i, mutation))
                 
         return population, mutations
             
@@ -198,4 +198,4 @@ if __name__ == "__main__":
     symulation = Symulation(-4, 12, 10, 0.01, 2, 0.001, 0.5)
     population = symulation.create_population()
     population = symulation.selection(population)
-    population = symulation.mutation(population)
+    population, count = symulation.mutation(population)
