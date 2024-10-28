@@ -14,26 +14,23 @@ class Individual():
         self.new_x = 0             # New value of x after selection, crossover, and mutation
         
     def set_random_x(self, a: int, b: int, roundTo: float) -> None:
-        self.x_real = round(uniform(a, b), roundTo)    
-        return self.x_real
+        self.x_real = round(uniform(a, b), roundTo) 
+        
+    def set_x_int(self, a: int, b: int, l: int) -> int:
+        self.x_int = math.ceil((1/(b-a))*(self.x_real - a)*(2**l - 1))
+    
+    def set_fitness(self) -> float:
+        self.fx = (self.x_real % 1) * (math.cos(20 * math.pi * self.x_real) - math.sin(self.x_real))
+        
+    def set_x_bin(self, l: int):
+        self.x_bin = format(self.x_int, f'0{l}b')
         
     def get_x_real(self, x: float, a: int, b: int, l: int, d: int) -> float:
         return round(((x*(b-a))/(2**l-1))+a, d)
     
-    def set_x_int(self, a: int, b: int, l: int) -> int:
-        self.x_int = math.ceil((1/(b-a))*(self.x_real - a)*(2**l - 1))
-        return self.x_int
-    
     def get_bin_int(self, x: float) -> int:
         return int(x, 2)
 
-    def set_x_bin(self, l: int):
-        return format(self.x_int, f'0{l}b')
-
-    def set_fitness(self) -> float:
-        self.fx = (self.x_int % 1) * (math.cos(20 * math.pi * self.x_int) - math.sin(self.x_int))
-        return self.fx
-    
     def mutate(self, p: float) -> int:
         mutated_count = 0
         genes = list(self.x_bin)
