@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from random import random, uniform
+from random import random, choice, randint, uniform
 import tkinter as tk
 from tkinter import ttk, Tk, Label, Entry
 
@@ -13,17 +13,26 @@ class Individual():
         self.gx = 0          # Fitness value
         self.p = 0
         self.q = 0
-        self.x_bin = ""           # Binary representation of the integer x
-        self.new_x = 0             # New value of x after selection, crossover, and mutation
+        self.is_parent = False
+        self.x_bin = "" # Binary representation of the integer x
+        self.child_bin = ""
+        
+        self.mutation_points = []
+        self.bin_post_mutation = ""
+        self.x_real_post_mutation = 0
+        self.fx_post_mutation = 0
         
     def set_random_x(self, a: int, b: int, roundTo: float) -> None:
         self.x_real = round(uniform(a, b), roundTo) 
         
-    def set_x_int(self, a: int, b: int, l: int) -> int:
+    def set_x_int(self, a: int, b: int, l: int) -> None:
         self.x_int = math.ceil((1/(b-a))*(self.x_real - a)*(2**l - 1))
     
-    def set_evaluation(self) -> float:
-        self.fx = (self.x_real % 1) * (math.cos(20 * math.pi * self.x_real) - math.sin(self.x_real))
+    def set_evaluation(self, x_real) -> None:
+        self.fx = (x_real % 1) * (math.cos(20 * math.pi * x_real) - math.sin(x_real))
+        
+    def set_post_mutation_evaluation(self, new_x_real: float) -> None:
+        self.fx_post_mutation = (new_x_real % 1) * (math.cos(20 * math.pi * new_x_real) - math.sin(new_x_real))
         
     def set_fitness(self, shift_value: float) -> float:
         self.gx = self.fx + shift_value
@@ -36,28 +45,35 @@ class Individual():
         
     def set_q(self, q: float) -> None:
         self.q = q
+        
+    def set_is_parent(self, pk: float) -> None:
+        if random() <= pk:
+            self.is_parent = True
             
-    def get_x_real(self, x: float, a: int, b: int, l: int, d: int) -> float:
+    def get_x_real(self, x: int, a: int, b: int, l: int, d: int) -> float:
         return round(((x*(b-a))/(2**l-1))+a, d)
     
-    def get_bin_int(self, x: float) -> int:
+    def get_bin_int(self, x: str) -> int:
         return int(x, 2)
 
-    def mutate(self, p: float) -> int:
-        mutated_count = 0
-        genes = list(self.x_bin)
+    def mutate(self, pm: float, a: int, b: int, l: int, d: float) -> None:
+        if self.child_bin:
+            genes = list(self.child_bin)
+        else:
+            genes = list(self.x_bin)
         for i, gene in enumerate(genes):
-            if p >= random():
-                mutated_count += 1
+            if pm >= random():
+                self.mutation_points.append(i)
                 if gene == "1":
                     genes[i] = "0"
                 else:
                     genes[i] = "1"
                     
-        self.x_bin = "".join(genes)
+        self.bin_post_mutation = "".join(genes)
+        new_x_int = self.get_bin_int(self.bin_post_mutation)
+        self.x_real_post_mutation = self.get_x_real(new_x_int, a, b, l, d)
+        self.set_post_mutation_evaluation(self.x_real_post_mutation)
         
-        return mutated_count
-    
     def print_values(self) -> list[int | float | str]:
         return [self.x_real, self.fx, self.gx, self.p, self.q, self.r]
     
@@ -69,8 +85,7 @@ class Symulation():
         self.roundTo = roundTo
         self.population_size = n
         self.binSize = self.get_bin_size(self.a, self.b, d)
-        self.p = pk
-        self.q = 0
+        self.pk = pk
         self.pm = pm
     
     def get_bin_size(self, a: int, b: int, d: int) -> int:
@@ -82,10 +97,8 @@ class Symulation():
             individual = Individual(i)
             individual.set_random_x(self.a, self.b, self.roundTo)
             individual.set_x_int(self.a, self.b, self.binSize)
-            individual.set_evaluation()
+            individual.set_evaluation(individual.x_real)
             individual.set_x_bin(self.binSize)
-            print(vars(individual))
-            
             population.append(individual)
             
         return population
@@ -105,9 +118,7 @@ class Symulation():
             individual.set_p(total_fitness, shift_value)
             probabilities.append(individual.p)
         
-        self.cumulative_distribution(population, probabilities)
-        
-        selected_population = np.random.choice(population, size=len(population), p=probabilities, replace=True)
+        selected_population = np.random.choice(population, size=len(population), p=probabilities, replace=True).tolist()
         return selected_population
     
     def cumulative_distribution(self, population: list[Individual], probabilities: list[float]) -> None:
@@ -116,19 +127,58 @@ class Symulation():
         for i, q in enumerate(probabilities):
             cumulative_sum += q
             population[i].set_q(q)
+     
+    def set_parents(self, population: list[Individual]) -> list[Individual]:       
+        for individual in population:
+            individual.set_is_parent(self.pk)
+        return population
             
-    def mating_pool(self, population: list[Individual]) -> list[Individual]:
-        pass
+    def pair_population(self, population: list[Individual]) -> list[Individual]:
+        parents = []
+        for individual in population:
+            if individual.is_parent:
+                parents.append(individual)
+        
+        pairs = [(parents[i], parents[i+1]) for i in range(0, len(parents) - 1, 2)]
+        
+        if len(parents) % 2 != 0:
+            leftover = parents[-1]
+            random_partner = choice(parents[:-1])
+            pairs.append((leftover, random_partner))
+            
+        return population, pairs
+    
+    def mate(self, population: list[Individual], pairs: list[Individual]) -> list[Individual]:
+        for parent1, parent2 in pairs:
+            crossover_point = randint(1, len(parent1.x_bin)-1)
+            parent1.child_bin = parent1.x_bin[:crossover_point] + parent2.x_bin[crossover_point:]
+            parent2.child_bin = parent2.x_bin[:crossover_point] + parent1.x_bin[crossover_point:]
+            
+            # child1 = Individual(parent1.id)
+            # child2 = Individual(parent2.id)
+            
+            # child1.x_bin, child2.x_bin = child1_bin, child2_bin
+            
+            # child1.x_int = child1.get_bin_int(child1.x_bin)
+            # child1.x_real = child1.get_x_real(child1.x_int, self.a, self.b, self.binSize, self.roundTo)
+            # child1.set_evaluation()
+            
+            # child2.x_int = child2.get_bin_int(child2.x_bin)
+            # child2.x_real = child2.get_x_real(child2.x_int, self.a, self.b, self.binSize, self.roundTo)
+            # child2.set_evaluation()
+            
+            # child1.set_fitness()
+            # child2.set_fitness()
+            
+            # population[parent1.id] = child1
+            # population[parent2.id] = child2
+            
+        return population
     
     def mutation(self, population: list[Individual]) -> list[Individual]:
-        mutations = []
-        for i, individual in enumerate(population):
-            mutation = individual.mutate(self.p)
-            if mutation > 0:
-                mutations.append((i, mutation))
-                
-        return population, mutations
-            
+        for individual in population:
+            individual.mutate(self.pm, self.a, self.b, self.binSize, self.roundTo)
+        return population
             
 class Window():
     def __init__(self) -> None:
@@ -223,8 +273,15 @@ class Window():
 if __name__ == "__main__":
     # win = Window()
     # win.draw()
-    symulation = Symulation(-4, 12, 10, 0.01, 2, 0.001, 0.5)
+    symulation = Symulation(-4, 12, 10, 0.01, 2, 0.5, 0.001)
     population = symulation.create_population()
+    for inv in population:
+        print(vars(inv))
     population = symulation.selection(population)
-    population = symulation.mating_pool(population)
-    # population, count = symulation.mutation(population)
+    population = symulation.set_parents(population)
+    
+    population, pairs = symulation.pair_population(population)
+    population = symulation.mate(population, pairs)
+    population = symulation.mutation(population)
+    for inv in population:
+        print(vars(inv))
