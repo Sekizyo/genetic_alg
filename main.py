@@ -179,7 +179,7 @@ class Symulation():
         for individual in population:
             individual.mutate(self.pm, self.a, self.b, self.binSize, self.roundTo)
         return population
-            
+    
 class Window():
     def __init__(self) -> None:
         self.root = Tk()
@@ -204,19 +204,19 @@ class Window():
         except:
             messagebox.showerror('Error', 'Enter valid values!')
             
-        return [a, b, n, d, roundTo, pk, pm)
+        return [a, b, n, d, roundTo, pk, pm]
 
-    def plot_table(self, data: list[int]) -> None:
-        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "x_real", "x bin", "parents", "children", "population","mutation point", "mutation bin", "mutation real", "mutation f(x)"]
+    def plot_table(self, population: list[int]) -> None:
+        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "survived selection", "parent", "crossover_point", "x_bin", "children","mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
         
         tree = ttk.Treeview(self.root, columns=columns, show="headings", height=10)
 
         for col in columns:
             tree.heading(col, text=col)
-            tree.column(col, anchor="center", width=120)  # Set appropriate width
+            tree.column(col, anchor="center", width=90)  # Set appropriate width
         
-        for row in data:
-            tree.insert("", tk.END, values=row)
+        for individual in population:
+            tree.insert("", tk.END, values=individual.print_values())
 
         tree.grid(row=10, column=0, columnspan=6, padx=10, pady=10)
 
