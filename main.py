@@ -14,7 +14,7 @@ class Individual():
         self.r = 0
         self.p = 0
         self.q = 0
-        self.x_bin = "-
+        self.x_bin = "-"
         self.child_bin = "-"
         
         self.is_selected = False
