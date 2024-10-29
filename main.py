@@ -241,48 +241,42 @@ class Window():
         a_label.grid(column=0, row=0)
         self.a_entry = Entry(self.root)
         self.a_entry.grid(column=1, row=0)
+        self.a_entry.insert(0, "-4")
 
         b_label = Label(self.root, text='b:')
         b_label.grid(column=3, row=0)
         self.b_entry = Entry(self.root)
         self.b_entry.grid(column=4, row=0)
+        self.b_entry.insert(0, "12")
 
         n_label = Label(self.root, text='N:')
         n_label.grid(column=0, row=1)
         self.n_entry = Entry(self.root)
         self.n_entry.grid(column=1, row=1)
+        self.n_entry.insert(0, "10")
 
         d_label = Label(self.root, text='d:')
         d_label.grid(column=3, row=1)
         self.d_box = ttk.Combobox(self.root, values=["0.1", "0.01", "0.001", "0.0001"])
         self.d_box.grid(column=4, row=1)
+        self.d_box.insert(0, "0.01")
         
         pk_label = Label(self.root, text='pk:')
         pk_label.grid(column=0, row=2)
         self.pk_entry = Entry(self.root)
         self.pk_entry.grid(column=1, row=2)
+        self.pk_entry.insert(0, "0.5")
 
         pm_label = Label(self.root, text='pm:')
         pm_label.grid(column=3, row=2)
         self.pm_entry = Entry(self.root)
         self.pm_entry.grid(column=4, row=2)
+        self.pm_entry.insert(0, "0.01")
 
         calc_button = ttk.Button(self.root, text="Calculate", command=self.calc)
         calc_button.grid(column=2, row=8)
         self.root.mainloop()
 
 if __name__ == "__main__":
-    # win = Window()
-    # win.draw()
-    symulation = Symulation(-4, 12, 10, 0.01, 2, 0.5, 0.001)
-    population = symulation.create_population()
-    for inv in population:
-        print(vars(inv))
-    population = symulation.selection(population)
-    population = symulation.set_parents(population)
-    
-    population, pairs = symulation.pair_population(population)
-    population = symulation.mate(population, pairs)
-    population = symulation.mutation(population)
-    for inv in population:
-        print(vars(inv))
+    win = Window()
+    win.draw()
