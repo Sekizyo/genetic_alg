@@ -6,15 +6,15 @@ from tkinter import ttk, Tk, Label, Entry, messagebox
 
 class Individual():
     def __init__(self, id: int) -> None:
-        self.id = id               # Unique identifier for the individual
-        self.x_real = 0       # The real value of x (within the range [a, b])
+        self.id = id
+        self.x_real = 0
         self.x_int = 0
-        self.fx = 0                # Evaluation value (calculated using F(x))
-        self.gx = 0          # Fitness value
+        self.fx = 0 
+        self.gx = 0
         self.r = 0
         self.p = 0
         self.q = 0
-        self.x_bin = "-" # Binary representation of the integer x
+        self.x_bin = "-
         self.child_bin = "-"
         
         self.is_selected = False
@@ -232,7 +232,7 @@ class Window():
 
         for col in columns:
             tree.heading(col, text=col)
-            tree.column(col, anchor="center", width=90)  # Set appropriate width
+            tree.column(col, anchor="center", width=90)
         
         for individual in population:
             tree.insert("", tk.END, values=individual.print_values())
