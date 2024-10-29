@@ -2,7 +2,7 @@ import math
 import numpy as np
 from random import random, choice, randint, uniform
 import tkinter as tk
-from tkinter import ttk, Tk, Label, Entry
+from tkinter import ttk, Tk, Label, Entry, messagebox
 
 class Individual():
     def __init__(self, id: int) -> None:
@@ -183,7 +183,7 @@ class Symulation():
 class Window():
     def __init__(self) -> None:
         self.root = Tk()
-        self.root.geometry("1000x500")
+        self.root.geometry("1500x400")
         self.root.title("Algorytm genetyczny - Matas Pieczulis 21162")
 
     def get_data(self) -> list[int]:
@@ -197,13 +197,14 @@ class Window():
             a = int(self.a_entry.get())
             b = int(self.b_entry.get())
             n = int(self.n_entry.get())
-            d = self.d_box.get()
+            d = float(self.d_box.get())
+            roundTo = _map[self.d_box.get()]
             pk = float(self.pk_entry.get())
             pm = float(self.pm_entry.get())
         except:
-            return (-4, 12, 10, 0.01, 2, 0.001, 0.001)
-        return (-4, 12, 10, 0.01, 2, 0.001, 0.001)
-        return (a, b, n, d, _map[d], pk, pm)
+            messagebox.showerror('Error', 'Enter valid values!')
+            
+        return [a, b, n, d, roundTo, pk, pm)
 
     def plot_table(self, data: list[int]) -> None:
         columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "x_real", "x bin", "parents", "children", "population","mutation point", "mutation bin", "mutation real", "mutation f(x)"]
