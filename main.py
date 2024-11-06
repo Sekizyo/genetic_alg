@@ -111,7 +111,7 @@ class Individual():
             parent_p = round(self.parent_p, d)
         else:
             parent_p = self.parent_p
-        return [self.id, self.x_real, self.fx, self.gx, round(self.p, d), round(self.q, d), self.is_selected, parent_p, self.is_parent, self.crossover_point, self.x_bin, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
+        return [self.id, self.x_real, self.fx, round(self.gx, d), round(self.p, d), round(self.q, d), self.is_selected, parent_p, self.is_parent, self.crossover_point, self.x_bin, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
     
 class Symulation():
     def __init__(self, a: int, b: int, n: int, d: float, roundTo: int, pk: float, pm: float) -> None:
@@ -158,6 +158,8 @@ class Symulation():
         
         for selected in selected_population:
             population[selected.id].set_is_selected()
+        
+        self.cumulative_distribution(population, probabilities)
             
         return population
     
@@ -166,7 +168,7 @@ class Symulation():
 
         for i, q in enumerate(probabilities):
             cumulative_sum += q
-            population[i].set_q(q)
+            population[i].set_q(cumulative_sum)
      
     def set_parents(self, population: list[Individual]) -> list[Individual]:       
         for individual in population:
@@ -180,12 +182,10 @@ class Symulation():
                 parents.append(individual)
         
         pairs = [(parents[i], parents[i+1]) for i in range(0, len(parents) - 1, 2)]
-        
         if len(parents) % 2 != 0:
-            leftover = parents[-1]
-            random_partner = choice(parents[:-1])
+            leftover = parents.pop(-1)
+            random_partner = choice(parents)
             pairs.append((leftover, random_partner))
-            
         return population, pairs
     
     def mate(self, population: list[Individual], pairs: list[Individual]) -> list[Individual]:
