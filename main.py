@@ -106,8 +106,12 @@ class Individual():
             self.x_real_after_mutation = self.get_x_real(new_x_int, a, b, l, d)
             self.set_after_mutation_evaluation(self.x_real_after_mutation)
       
-    def print_values(self) -> list[str]:
-        return [self.id, self.x_real, self.fx, self.gx, self.p, self.q, self.is_selected, self.parent_p, self.is_parent, self.crossover_point, self.x_bin, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
+    def print_values(self, d: int) -> list[str]:
+        if self.parent_p != "-":
+            parent_p = round(self.parent_p, d)
+        else:
+            parent_p = self.parent_p
+        return [self.id, self.x_real, self.fx, self.gx, round(self.p, d), round(self.q, d), self.is_selected, parent_p, self.is_parent, self.crossover_point, self.x_bin, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
     
 class Symulation():
     def __init__(self, a: int, b: int, n: int, d: float, roundTo: int, pk: float, pm: float) -> None:
@@ -227,7 +231,7 @@ class Window():
         return [a, b, n, d, roundTo, pk, pm]
 
     def plot_table(self, population: list[int]) -> None:
-        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "survived selection", "parent r", "parent", "crossover_point", "x_bin", "children","mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
+        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "survived selection", "parent p", "parent", "crossover_point", "x_bin", "children","mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
         
         tree = ttk.Treeview(self.root, columns=columns, show="headings", height=10)
 
@@ -236,7 +240,7 @@ class Window():
             tree.column(col, anchor="center", width=90)
         
         for individual in population:
-            tree.insert("", tk.END, values=individual.print_values())
+            tree.insert("", tk.END, values=individual.print_values(self.symulation.roundTo))
 
         tree.grid(row=10, column=0, columnspan=6, padx=10, pady=10)
 
