@@ -11,7 +11,7 @@ class Individual():
         self.x_int = 0
         self.fx = 0 
         self.gx = 0
-        self.r = 0
+        self.parent_p = 0
         self.p = 0
         self.q = 0
         self.x_bin = "-"
@@ -52,10 +52,11 @@ class Individual():
         
     def set_is_parent(self, pk: float) -> None:
         if not self.is_selected:
+            self.parent_p = "-"
             return
         
-        self.r = random()
-        if self.r <= pk:
+        self.parent_p = random()
+        if self.parent_p >= pk:
             self.is_parent = "True"
         else:
             self.is_parent = "False"
@@ -106,7 +107,7 @@ class Individual():
             self.set_after_mutation_evaluation(self.x_real_after_mutation)
       
     def print_values(self) -> list[str]:
-        return [self.id, self.x_real, self.fx, self.gx, self.p, self.q, self.r, self.is_selected, self.is_parent, self.crossover_point, self.x_bin, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
+        return [self.id, self.x_real, self.fx, self.gx, self.p, self.q, self.is_selected, self.parent_p, self.is_parent, self.crossover_point, self.x_bin, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
     
 class Symulation():
     def __init__(self, a: int, b: int, n: int, d: float, roundTo: int, pk: float, pm: float) -> None:
@@ -226,7 +227,7 @@ class Window():
         return [a, b, n, d, roundTo, pk, pm]
 
     def plot_table(self, population: list[int]) -> None:
-        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "survived selection", "parent", "crossover_point", "x_bin", "children","mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
+        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "survived selection", "parent r", "parent", "crossover_point", "x_bin", "children","mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
         
         tree = ttk.Treeview(self.root, columns=columns, show="headings", height=10)
 
