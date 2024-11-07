@@ -15,6 +15,7 @@ class Individual():
         self.p = 0
         self.q = 0
         self.x_bin = "-"
+        self.parent2 = "-"
         self.child_bin = "-"
         
         self.is_selected = False
@@ -53,10 +54,11 @@ class Individual():
     def set_is_parent(self, pk: float) -> None:
         if not self.is_selected:
             self.parent_p = "-"
+            self.parent2 = "-"
             return
         
         self.parent_p = random()
-        if self.parent_p >= pk:
+        if self.parent_p <= pk:
             self.is_parent = "True"
         else:
             self.is_parent = "False"
@@ -69,6 +71,9 @@ class Individual():
             self.crossover_point = point
         else:
             self.crossover_point = "-"
+            
+    def set_parent2(self, parent2: str) -> None:
+        self.parent2 = parent2
             
     def set_child_bin(self, bin: str) -> None:
         if self.is_selected:
@@ -111,7 +116,7 @@ class Individual():
             parent_p = round(self.parent_p, d)
         else:
             parent_p = self.parent_p
-        return [self.id, self.x_real, self.fx, round(self.gx, d), round(self.p, d), round(self.q, d), self.is_selected, parent_p, self.is_parent, self.crossover_point, self.x_bin, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
+        return [self.id, self.x_real, self.fx, round(self.gx, d), round(self.p, d), round(self.q, d), self.is_selected, parent_p, self.is_parent, self.x_bin, self.parent2, self.crossover_point, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
     
 class Symulation():
     def __init__(self, a: int, b: int, n: int, d: float, roundTo: int, pk: float, pm: float) -> None:
@@ -194,6 +199,9 @@ class Symulation():
             parent1.set_crossover_point(crossover_point)
             parent2.set_crossover_point(crossover_point)
             
+            parent1.set_parent2(parent2.x_bin)
+            parent2.set_parent2(parent1.x_bin)
+            
             parent1.child_bin = parent1.x_bin[:crossover_point] + parent2.x_bin[crossover_point:]
             parent2.child_bin = parent2.x_bin[:crossover_point] + parent1.x_bin[crossover_point:]
             
@@ -207,7 +215,7 @@ class Symulation():
 class Window():
     def __init__(self) -> None:
         self.root = Tk()
-        self.root.geometry("1500x400")
+        self.root.geometry("1700x400")
         self.root.title("Algorytm genetyczny - Matas Pieczulis 21162")
 
     def get_data(self) -> list[int]:
@@ -231,7 +239,7 @@ class Window():
         return [a, b, n, d, roundTo, pk, pm]
 
     def plot_table(self, population: list[int]) -> None:
-        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "survived selection", "parent p", "parent", "crossover_point", "x_bin", "children","mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
+        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "survived selection", "parent p", "is parent", "x_bin", "parent2", "crossover_point", "children", "mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
         
         tree = ttk.Treeview(self.root, columns=columns, show="headings", height=10)
 

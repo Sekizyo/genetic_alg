@@ -3,3 +3,6 @@ include/
 lib/
 Scripts/
 pyvenv.cfg
+build/
+dist/
+*.spec
