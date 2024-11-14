@@ -18,11 +18,10 @@ class Individual():
         self.r = 0
         self.r2 = 0
         self.x_sel = 0
-        self.x_bin = "-"
-        self.parent2 = "-"
-        self.child_bin = "-"
+        self.x_bin = ""
+        self.parent2 = ""
+        self.child_bin = ""
         
-        self.is_selected = False
         self.is_parent = "-"
         self.crossover_point = "-"
         
@@ -35,7 +34,7 @@ class Individual():
         self.x_real = round(uniform(a, b), roundTo) 
         
     def set_x_int(self, a: int, b: int, l: int) -> None:
-        self.x_int = math.ceil((1/(b-a))*(self.x_real - a)*(2**l - 1))
+        self.x_int = math.ceil((1/(b-a))*(self.x_sel - a)*(2**l - 1))
     
     def set_evaluation(self, x_real) -> None:
         self.fx = (x_real % 1) * (math.cos(20 * math.pi * x_real) - math.sin(x_real))
@@ -58,23 +57,14 @@ class Individual():
     def set_r(self, r: float) -> None:
         self.r = r
             
-    def set_is_selected(self) -> None:
-        self.is_selected = True
-        
     def set_crossover_point(self, point: int) -> None:
-        if self.is_selected:
-            self.crossover_point = point
-        else:
-            self.crossover_point = "-"
+        self.crossover_point = point
             
     def set_parent2(self, parent2: str) -> None:
         self.parent2 = parent2
             
     def set_child_bin(self, bin: str) -> None:
-        if self.is_selected:
-            self.child_bin = bin
-        else:
-            self.child_bin = "-"
+        self.child_bin = bin
             
     def get_x_real(self, x: int, a: int, b: int, l: int, d: int) -> float:
         return round(((x*(b-a))/(2**l-1))+a, d)
@@ -83,13 +73,7 @@ class Individual():
         return int(x, 2)
 
     def mutate(self, pm: float, a: int, b: int, l: int, d: float) -> None:
-        if not self.is_selected:
-            return
-        
-        if self.is_parent:
-            genes = list(self.child_bin)
-        else:
-            genes = list(self.x_bin)
+        genes = list(self.child_bin)
             
         for i, gene in enumerate(genes):
             if pm >= random():
@@ -157,14 +141,19 @@ class Symulation():
         q_values = []
         for individual in population:
             individual.r = round(uniform(0, 1), self.roundTo)
+            individual.r2 = round(uniform(0, 1), self.roundTo)
             x_values.append(individual.x_real)
             r_values.append(individual.r)
             q_values.append(individual.q)
+            
         for i, individual in enumerate(population):
             j = 0
             while j < len(q_values) and r_values[i] > q_values[j]:
                 j += 1
             individual.x_sel = x_values[j]
+            individual.set_x_int(self.a, self.b, self.binSize)
+            individual.set_evaluation(individual.x_sel)
+            individual.set_x_bin(self.binSize)
         
         return population
     
@@ -176,10 +165,7 @@ class Symulation():
             population[i].set_q(cumulative_sum)
      
     def pair_population(self, population: list[Individual]) -> list[Individual]:
-        parents = []
-        for individual in population:
-            if individual.is_parent == "True":
-                parents.append(individual)
+        parents = population
         
         pairs = [(parents[i], parents[i+1]) for i in range(0, len(parents) - 1, 2)]
         if len(parents) % 2 != 0:
@@ -234,7 +220,7 @@ class Window():
         return [a, b, n, d, roundTo, pk, pm]
 
     def plot_table(self, population: list[int]) -> None:
-        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "x sel", "x_bin", "r2", "parent", "crossover_point", "children", "mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
+        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "x sel", "x_bin", "r2", "parent", "crossover_point", "children", "mutation points", "bin2", "x real2", "f(x)2"]
         
         tree = ttk.Treeview(self.root, columns=columns, show="headings", height=10)
 
@@ -260,9 +246,9 @@ class Window():
         population = self.symulation.create_population()
         
         population = self.symulation.selection(population)
-        # population, pairs = self.symulation.pair_population(population)
-        # population = self.symulation.mate(population, pairs)
-        # population = self.symulation.mutation(population)
+        population, pairs = self.symulation.pair_population(population)
+        population = self.symulation.mate(population, pairs)
+        population = self.symulation.mutation(population)
         
         self.plot_table(population)
         return
