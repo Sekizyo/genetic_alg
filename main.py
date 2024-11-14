@@ -15,6 +15,9 @@ class Individual():
         self.parent_p = 0
         self.p = 0
         self.q = 0
+        self.r = 0
+        self.r2 = 0
+        self.x_sel = 0
         self.x_bin = "-"
         self.parent2 = "-"
         self.child_bin = "-"
@@ -52,17 +55,8 @@ class Individual():
     def set_q(self, q: float) -> None:
         self.q = q
         
-    def set_is_parent(self, pk: float) -> None:
-        if not self.is_selected:
-            self.parent_p = "-"
-            self.parent2 = "-"
-            return
-        
-        self.parent_p = random()
-        if self.parent_p <= pk:
-            self.is_parent = "True"
-        else:
-            self.is_parent = "False"
+    def set_r(self, r: float) -> None:
+        self.r = r
             
     def set_is_selected(self) -> None:
         self.is_selected = True
@@ -113,11 +107,7 @@ class Individual():
             self.set_after_mutation_evaluation(self.x_real_after_mutation)
       
     def print_values(self, d: int) -> list[str]:
-        if self.parent_p != "-":
-            parent_p = round(self.parent_p, d)
-        else:
-            parent_p = self.parent_p
-        return [self.id, self.x_real, self.fx, round(self.gx, d), round(self.p, d), round(self.q, d), self.is_selected, parent_p, self.is_parent, self.x_bin, self.parent2, self.crossover_point, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
+        return [self.id, self.x_real, self.fx, round(self.gx, d), round(self.p, d), round(self.q, d), self.r, self.x_sel, self.x_bin, self.r2, self.parent2, self.crossover_point, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
     
 class Symulation():
     def __init__(self, a: int, b: int, n: int, d: float, roundTo: int, pk: float, pm: float) -> None:
@@ -160,13 +150,22 @@ class Symulation():
             individual.set_p(total_fitness, shift_value)
             probabilities.append(individual.p)
         
-        selected_population = np.random.choice(population, size=len(population), p=probabilities, replace=True).tolist()
-        
-        for selected in selected_population:
-            population[selected.id].set_is_selected()
-        
-        self.cumulative_distribution(population, probabilities)
             
+        self.cumulative_distribution(population, probabilities)
+        x_values = []
+        r_values = []
+        q_values = []
+        for individual in population:
+            individual.r = round(uniform(0, 1), self.roundTo)
+            x_values.append(individual.x_real)
+            r_values.append(individual.r)
+            q_values.append(individual.q)
+        for i, individual in enumerate(population):
+            j = 0
+            while j < len(q_values) and r_values[i] > q_values[j]:
+                j += 1
+            individual.x_sel = x_values[j]
+        
         return population
     
     def cumulative_distribution(self, population: list[Individual], probabilities: list[float]) -> None:
@@ -176,11 +175,6 @@ class Symulation():
             cumulative_sum += q
             population[i].set_q(cumulative_sum)
      
-    def set_parents(self, population: list[Individual]) -> list[Individual]:       
-        for individual in population:
-            individual.set_is_parent(self.pk)
-        return population
-            
     def pair_population(self, population: list[Individual]) -> list[Individual]:
         parents = []
         for individual in population:
@@ -240,7 +234,7 @@ class Window():
         return [a, b, n, d, roundTo, pk, pm]
 
     def plot_table(self, population: list[int]) -> None:
-        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "survived selection", "parent p", "is parent", "x_bin", "parent2", "crossover_point", "children", "mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
+        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "x sel", "x_bin", "r2", "parent", "crossover_point", "children", "mutation points", "bin after mutation", "x real after mutation", "f(x) after mutation"]
         
         tree = ttk.Treeview(self.root, columns=columns, show="headings", height=10)
 
@@ -266,10 +260,9 @@ class Window():
         population = self.symulation.create_population()
         
         population = self.symulation.selection(population)
-        population = self.symulation.set_parents(population)
-        population, pairs = self.symulation.pair_population(population)
-        population = self.symulation.mate(population, pairs)
-        population = self.symulation.mutation(population)
+        # population, pairs = self.symulation.pair_population(population)
+        # population = self.symulation.mate(population, pairs)
+        # population = self.symulation.mutation(population)
         
         self.plot_table(population)
         return
