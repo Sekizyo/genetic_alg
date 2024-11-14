@@ -1,3 +1,4 @@
+#Matas Pieczulis ID05IO1 21162
 import math
 import numpy as np
 from random import random, choice, randint, uniform
@@ -39,8 +40,8 @@ class Individual():
     def set_after_mutation_evaluation(self, new_x_real: float) -> None:
         self.fx_after_mutation = (new_x_real % 1) * (math.cos(20 * math.pi * new_x_real) - math.sin(new_x_real))
         
-    def set_fitness(self, shift_value: float) -> float:
-        self.gx = self.fx + shift_value
+    def set_fitness(self, minF: float, d: float) -> float:
+        self.gx = self.fx - minF + d 
             
     def set_x_bin(self, l: int) -> None:
         self.x_bin = format(self.x_int, f'0{l}b')
@@ -155,7 +156,7 @@ class Symulation():
         
         probabilities = []
         for individual in population:
-            individual.set_fitness(shift_value)
+            individual.set_fitness(min_fitness, self.d)
             individual.set_p(total_fitness, shift_value)
             probabilities.append(individual.p)
         
