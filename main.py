@@ -19,13 +19,14 @@ class Individual():
         self.r2 = 0
         self.x_sel = 0
         self.x_bin = ""
-        self.parent2 = ""
-        self.child_bin = ""
+        self.parent2 = "-"
+        self.child_bin = "-"
         
         self.is_parent = "-"
         self.crossover_point = "-"
         
         self.mutation_points = []
+        self.new_gen = ""
         self.bin_after_mutation = "-"
         self.x_real_after_mutation = "-"
         self.fx_after_mutation = "-"
@@ -59,6 +60,21 @@ class Individual():
             
     def set_crossover_point(self, point: int) -> None:
         self.crossover_point = point
+        
+    def set_is_parent(self, pk: float) -> None:
+        if self.r2 <= pk:
+            self.is_parent = True
+        else:
+            self.is_parent = False
+            
+    def set_is_selected(self) -> None:
+        self.is_selected = True
+        
+    def set_crossover_point(self, point: int) -> None:
+        if self.is_parent:
+            self.crossover_point = point
+        else:
+            self.crossover_point = "-"
             
     def set_parent2(self, parent2: str) -> None:
         self.parent2 = parent2
@@ -73,8 +89,13 @@ class Individual():
         return int(x, 2)
 
     def mutate(self, pm: float, a: int, b: int, l: int, d: float) -> None:
-        genes = list(self.child_bin)
-            
+        if self.is_parent:
+            genes = list(self.child_bin)
+            self.new_gen = self.child_bin
+        else:
+            genes = list(self.x_bin)
+            self.new_gen = self.x_bin
+        
         for i, gene in enumerate(genes):
             if pm >= random():
                 self.mutation_points.append(i)
@@ -91,7 +112,11 @@ class Individual():
             self.set_after_mutation_evaluation(self.x_real_after_mutation)
       
     def print_values(self, d: int) -> list[str]:
-        return [self.id, self.x_real, self.fx, round(self.gx, d), round(self.p, d), round(self.q, d), self.r, self.x_sel, self.x_bin, self.r2, self.parent2, self.crossover_point, self.child_bin, self.mutation_points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
+        if self.mutation_points:
+            points = self.mutation_points
+        else:
+            points = "-"
+        return [self.id, self.x_real, self.fx, round(self.gx, d), round(self.p, d), round(self.q, d), self.r, self.x_sel, self.x_bin, self.r2, self.parent2, self.crossover_point, self.child_bin, self.new_gen, points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
     
 class Symulation():
     def __init__(self, a: int, b: int, n: int, d: float, roundTo: int, pk: float, pm: float) -> None:
@@ -154,6 +179,7 @@ class Symulation():
             individual.set_x_int(self.a, self.b, self.binSize)
             individual.set_evaluation(individual.x_sel)
             individual.set_x_bin(self.binSize)
+            individual.set_is_parent(self.pk)
         
         return population
     
@@ -165,7 +191,10 @@ class Symulation():
             population[i].set_q(cumulative_sum)
      
     def pair_population(self, population: list[Individual]) -> list[Individual]:
-        parents = population
+        parents = []
+        for individual in population:
+            if individual.is_parent:
+                parents.append(individual)
         
         pairs = [(parents[i], parents[i+1]) for i in range(0, len(parents) - 1, 2)]
         if len(parents) % 2 != 0:
@@ -220,7 +249,7 @@ class Window():
         return [a, b, n, d, roundTo, pk, pm]
 
     def plot_table(self, population: list[int]) -> None:
-        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "x sel", "x_bin", "r2", "parent", "crossover_point", "children", "mutation points", "bin2", "x real2", "f(x)2"]
+        columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "x sel", "x_bin", "r2", "parent", "crossover_point", "children", "new generation", "mutation points", "bin2", "x real2", "f(x)2"]
         
         tree = ttk.Treeview(self.root, columns=columns, show="headings", height=10)
 
