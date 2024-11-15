@@ -110,7 +110,12 @@ class Individual():
             new_x_int = self.get_bin_int(self.bin_after_mutation)
             self.x_real_after_mutation = self.get_x_real(new_x_int, a, b, l, d)
             self.set_after_mutation_evaluation(self.x_real_after_mutation)
-      
+        else:
+            self.bin_after_mutation = self.x_bin
+            new_x_int = self.get_bin_int(self.bin_after_mutation)
+            self.x_real_after_mutation = self.get_x_real(new_x_int, a, b, l, d)
+            self.set_after_mutation_evaluation(self.x_real_after_mutation)
+            
     def print_values(self, d: int) -> list[str]:
         if self.mutation_points:
             points = self.mutation_points
@@ -170,7 +175,6 @@ class Symulation():
             individual.set_p(total_fitness, shift_value)
             probabilities.append(individual.p)
         
-            
         self.cumulative_distribution(population, probabilities)
         x_values = []
         r_values = []
@@ -182,10 +186,10 @@ class Symulation():
             r_values.append(individual.r)
             q_values.append(individual.q)
         
-        for individual in population:
+        for x, individual in enumerate(population):
             index = 0
             for i in range(1, len(q_values)):
-                if q_values[i - 1] < r_values[i] <= q_values[i]:
+                if q_values[i - 1] <= r_values[x] <= q_values[i]:
                     index = i
                     break
             individual.x_sel = x_values[index]
