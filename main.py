@@ -34,8 +34,8 @@ class Individual():
     def set_random_x(self, a: int, b: int, roundTo: float) -> None:
         self.x_real = round(uniform(a, b), roundTo) 
         
-    def set_x_int(self, a: int, b: int, l: int) -> None:
-        self.x_int = math.ceil((1/(b-a))*(self.x_sel - a)*(2**l - 1))
+    def set_x_int(self, x_real: float,  a: int, b: int, l: int) -> None:
+        self.x_int = math.ceil((1/(b-a))*(x_real - a)*(2**l - 1))
     
     def set_evaluation(self, x_real) -> None:
         self.fx = (x_real % 1) * (math.cos(20 * math.pi * x_real) - math.sin(x_real))
@@ -137,12 +137,23 @@ class Symulation():
         for i in range(self.population_size):
             individual = Individual(i)
             individual.set_random_x(self.a, self.b, self.roundTo)
-            individual.set_x_int(self.a, self.b, self.binSize)
+            individual.set_x_int(individual.x_real, self.a, self.b, self.binSize)
             individual.set_evaluation(individual.x_real)
             individual.set_x_bin(self.binSize)
             population.append(individual)
             
         return population
+    
+    def new_population(self, population: list[Individual]) -> list[Individual]:
+        new_pop = []
+        for individual in population:
+            individual2 = Individual(individual.id)
+            individual2.x_real = individual.x_real_after_mutation
+            individual2.set_x_int(individual2.x_real, self.a, self.b, self.binSize)
+            individual2.set_evaluation(individual2.x_real)
+            individual2.set_x_bin(self.binSize)
+            new_pop.append(individual2)
+        return new_pop
     
     def selection(self, population: list[Individual]) -> list[Individual]:
         min_fitness = min(individual.fx for individual in population)
@@ -170,13 +181,15 @@ class Symulation():
             x_values.append(individual.x_real)
             r_values.append(individual.r)
             q_values.append(individual.q)
-            
-        for i, individual in enumerate(population):
-            j = 0
-            while j < len(q_values) and r_values[i] > q_values[j]:
-                j += 1
-            individual.x_sel = x_values[j]
-            individual.set_x_int(self.a, self.b, self.binSize)
+        
+        for individual in population:
+            index = 0
+            for i in range(1, len(q_values)):
+                if q_values[i - 1] < r_values[i] <= q_values[i]:
+                    index = i
+                    break
+            individual.x_sel = x_values[index]
+            individual.set_x_int(individual.x_sel, self.a, self.b, self.binSize)
             individual.set_evaluation(individual.x_sel)
             individual.set_x_bin(self.binSize)
             individual.set_is_parent(self.pk)
@@ -197,10 +210,10 @@ class Symulation():
                 parents.append(individual)
         
         pairs = [(parents[i], parents[i+1]) for i in range(0, len(parents) - 1, 2)]
-        if len(parents) % 2 != 0:
+        if len(parents) % 2 != 0 and pairs:
             leftover = parents.pop(-1)
-            random_partner = choice(parents)
-            pairs.append((leftover, random_partner))
+            random_partner = choice(pairs)
+            pairs.append((leftover, random_partner[0]))
         return population, pairs
     
     def mate(self, population: list[Individual], pairs: list[Individual]) -> list[Individual]:
@@ -243,10 +256,11 @@ class Window():
             roundTo = _map[self.d_box.get()]
             pk = float(self.pk_entry.get())
             pm = float(self.pm_entry.get())
+            t = int(self.t_entry.get())
         except:
             messagebox.showerror('Error', 'Enter valid values!')
             
-        return [a, b, n, d, roundTo, pk, pm]
+        return [a, b, n, d, roundTo, pk, pm, t]
 
     def plot_table(self, population: list[int]) -> None:
         columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "x sel", "x_bin", "r2", "parent", "crossover_point", "children", "new generation", "mutation points", "bin2", "x real2", "f(x)2"]
@@ -270,15 +284,21 @@ class Window():
         hsb.grid(row=11, column=0, columnspan=6, sticky='ew')
 
     def calc(self) -> None:
-        a, b, n, d, roundTo, pk, pm = self.get_data()
+        a, b, n, d, roundTo, pk, pm, t = self.get_data()
         self.symulation = Symulation(a, b, n, d, roundTo, pk, pm)
         population = self.symulation.create_population()
-        
         population = self.symulation.selection(population)
         population, pairs = self.symulation.pair_population(population)
         population = self.symulation.mate(population, pairs)
         population = self.symulation.mutation(population)
         
+        for _ in range(t):
+            population = self.symulation.new_population(population)
+            population = self.symulation.selection(population)
+            population, pairs = self.symulation.pair_population(population)
+            population = self.symulation.mate(population, pairs)
+            population = self.symulation.mutation(population)
+            
         self.plot_table(population)
         return
 
@@ -318,6 +338,12 @@ class Window():
         self.pm_entry = Entry(self.root)
         self.pm_entry.grid(column=4, row=2)
         self.pm_entry.insert(0, "0.01")
+        
+        t_label = Label(self.root, text='T:')
+        t_label.grid(column=0, row=3)
+        self.t_entry = Entry(self.root)
+        self.t_entry.grid(column=1, row=3)
+        self.t_entry.insert(0, "10")
 
         calc_button = ttk.Button(self.root, text="Calculate", command=self.calc)
         calc_button.grid(column=2, row=8)
