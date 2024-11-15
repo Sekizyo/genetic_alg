@@ -1,9 +1,11 @@
 #Matas Pieczulis ID05IO1 21162
 import math
-import numpy as np
 from random import random, choice, randint, uniform
 import tkinter as tk
 from tkinter import ttk, Tk, Label, Entry, messagebox
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure 
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk) 
 
 class Individual():
     def __init__(self, id: int) -> None:
@@ -239,10 +241,16 @@ class Symulation():
             individual.mutate(self.pm, self.a, self.b, self.binSize, self.roundTo)
         return population
     
+    def output(self, interation: int,  population: list[Individual]) -> list[Individual]:
+        min_ = min(individual.fx_after_mutation for individual in population)
+        avg_ = sum(individual.fx_after_mutation for individual in population)/len(population)
+        max_ = max(individual.fx_after_mutation for individual in population)
+        return (interation, min_, avg_, max_)
+    
 class Window():
     def __init__(self) -> None:
         self.root = Tk()
-        self.root.geometry("1700x400")
+        self.root.geometry("1700x1000")
         self.root.title("Algorytm genetyczny - Matas Pieczulis 21162")
 
     def get_data(self) -> list[int]:
@@ -286,24 +294,59 @@ class Window():
 
         vsb.grid(row=10, column=6, sticky='ns')
         hsb.grid(row=11, column=0, columnspan=6, sticky='ew')
+    
+    def plot_summary(self, output: list) -> None:
+        generations = [row[0] for row in output]
+        min_values = [row[1] for row in output]
+        avg_values = [row[2] for row in output]
+        max_values = [row[3] for row in output]
 
+        # Create a Figure
+        fig = Figure(figsize=(10, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        # Plot the data
+        ax.plot(generations, min_values, label='Min f(x)', marker='o')
+        ax.plot(generations, max_values, label='Max f(x)', marker='o')
+        ax.plot(generations, avg_values, label='Avg f(x)', marker='o')
+
+        # Customize the plot
+        ax.set_xlabel('Pokolenie')
+        ax.set_ylabel('f(x)')
+        ax.set_title('Wykres podsumowujący wartości f(x) dla pokoleń')
+        ax.legend()
+        ax.grid(True)
+
+        # Embed the plot into the Tkinter window using grid
+        canvas = FigureCanvasTkAgg(fig, master=self.root)
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.grid(row=10, column=5, sticky="nsew")
+
+        # Configure grid weight for resizing
+        self.root.grid_rowconfigure(10, weight=1)
+        self.root.grid_columnconfigure(10, weight=1)
+        canvas.draw()
     def calc(self) -> None:
         a, b, n, d, roundTo, pk, pm, t = self.get_data()
+        output = []
         self.symulation = Symulation(a, b, n, d, roundTo, pk, pm)
         population = self.symulation.create_population()
         population = self.symulation.selection(population)
         population, pairs = self.symulation.pair_population(population)
         population = self.symulation.mate(population, pairs)
         population = self.symulation.mutation(population)
+        output.append(self.symulation.output(0, population))
         
-        for _ in range(t):
+        for iter in range(t):
             population = self.symulation.new_population(population)
             population = self.symulation.selection(population)
             population, pairs = self.symulation.pair_population(population)
             population = self.symulation.mate(population, pairs)
             population = self.symulation.mutation(population)
-            
-        self.plot_table(population)
+            output.append(self.symulation.output(iter, population))
+        
+        self.plot_summary(output)
+        # self.plot_table(population)
         return
 
     def draw(self) -> None:
