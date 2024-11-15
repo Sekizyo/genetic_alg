@@ -126,7 +126,7 @@ class Individual():
         return [self.id, self.x_real, self.fx, round(self.gx, d), round(self.p, d), round(self.q, d), self.r, self.x_sel, self.x_bin, self.r2, self.parent2, self.crossover_point, self.child_bin, self.new_gen, points, self.bin_after_mutation, self.x_real_after_mutation, self.fx_after_mutation]          
     
 class Symulation():
-    def __init__(self, a: int, b: int, n: int, d: float, roundTo: int, pk: float, pm: float) -> None:
+    def __init__(self, a: int, b: int, n: int, d: float, roundTo: int, pk: float, pm: float, is_elite: bool) -> None:
         self.a = a
         self.b = b
         self.d = d
@@ -135,6 +135,7 @@ class Symulation():
         self.binSize = self.get_bin_size(self.a, self.b, d)
         self.pk = pk
         self.pm = pm
+        self.is_elite = is_elite
     
     def get_bin_size(self, a: int, b: int, d: int) -> int:
         return math.ceil(math.log(((b-a)/d)+1, 2))
@@ -269,10 +270,11 @@ class Window():
             pk = float(self.pk_entry.get())
             pm = float(self.pm_entry.get())
             t = int(self.t_entry.get())
+            is_elite = bool(self.elite_box.get())
         except:
             messagebox.showerror('Error', 'Enter valid values!')
             
-        return [a, b, n, d, roundTo, pk, pm, t]
+        return [a, b, n, d, roundTo, pk, pm, t, is_elite]
 
     def plot_table(self, population: list[int]) -> None:
         columns = ["LP", "x_real", "f(x)", "g(x)", "p", "q", "r", "x sel", "x_bin", "r2", "parent", "crossover_point", "children", "new generation", "mutation points", "bin2", "x real2", "f(x)2"]
@@ -326,10 +328,11 @@ class Window():
         self.root.grid_rowconfigure(10, weight=1)
         self.root.grid_columnconfigure(10, weight=1)
         canvas.draw()
+        
     def calc(self) -> None:
-        a, b, n, d, roundTo, pk, pm, t = self.get_data()
+        a, b, n, d, roundTo, pk, pm, t, is_elite = self.get_data()
         output = []
-        self.symulation = Symulation(a, b, n, d, roundTo, pk, pm)
+        self.symulation = Symulation(a, b, n, d, roundTo, pk, pm, is_elite)
         population = self.symulation.create_population()
         population = self.symulation.selection(population)
         population, pairs = self.symulation.pair_population(population)
@@ -392,6 +395,9 @@ class Window():
         self.t_entry.grid(column=1, row=3)
         self.t_entry.insert(0, "10")
 
+        self.elite_box = ttk.Checkbutton(self.root, text="Elite:")
+        self.elite_box.grid(column=4, row=3)
+        
         calc_button = ttk.Button(self.root, text="Calculate", command=self.calc)
         calc_button.grid(column=2, row=8)
         self.root.mainloop()
