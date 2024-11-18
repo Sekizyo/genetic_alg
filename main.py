@@ -48,6 +48,9 @@ class Individual():
         
     def set_fitness(self, minF: float, d: float) -> float:
         self.gx = self.fx - minF + d 
+        
+    def set_fitness_after_mutation(self, minF: float, d: float) -> float:
+        self.gx_after_mutation = self.fx_after_mutation - minF + d 
             
     def set_x_bin(self, l: int) -> None:
         self.x_bin = format(self.x_int, f'0{l}b')
@@ -160,6 +163,13 @@ class Symulation():
         return population
     
     def new_population(self, population: list[Individual]) -> list[Individual]:
+        if not population:
+            population = self.create_population()
+            population = self.selection(population)
+            population, pairs = self.pair_population(population)
+            population = self.mate(population, pairs)
+            population = self.mutation(population)
+            
         new_pop = []
         for individual in population:
             individual2 = Individual(individual.id)
@@ -168,7 +178,15 @@ class Symulation():
             individual2.set_evaluation(individual2.x_real)
             individual2.set_x_bin(self.binSize)
             new_pop.append(individual2)
+                
         return new_pop
+    
+    def evaluate(self, population: list[Individual]) -> list[Individual]:
+        min_fitness = min(individual.fx_after_mutation for individual in population)
+        for individual in population:
+            individual.set_fitness_after_mutation(min_fitness, self.d)
+            
+        return population
     
     def selection(self, population: list[Individual]) -> list[Individual]:
         min_fitness = min(individual.fx for individual in population)
@@ -195,7 +213,7 @@ class Symulation():
             x_values.append(individual.x_real)
             r_values.append(individual.r)
             q_values.append(individual.q)
-        
+            
         for x, individual in enumerate(population):
             index = 0
             for i in range(1, len(q_values)):
@@ -338,21 +356,27 @@ class Window():
         
     def calc(self) -> None:
         a, b, n, d, roundTo, pk, pm, t, is_elite = self.get_data()
-        output = []
         self.symulation = Symulation(a, b, n, d, roundTo, pk, pm, is_elite)
-        population = self.symulation.create_population()
-        population = self.symulation.selection(population)
-        population, pairs = self.symulation.pair_population(population)
-        population = self.symulation.mate(population, pairs)
-        population = self.symulation.mutation(population)
-        output.append(self.symulation.output(0, population))
-        
+        output = []
+        population = []
+        elite = None
         for iter in range(t):
             population = self.symulation.new_population(population)
+            if self.symulation.is_elite:
+                population.sort(key=lambda individual: individual.gx, reverse=True)
+                elite = population.pop(0)
+                
             population = self.symulation.selection(population)
             population, pairs = self.symulation.pair_population(population)
             population = self.symulation.mate(population, pairs)
             population = self.symulation.mutation(population)
+            
+            if self.symulation.is_elite:
+                elite = self.symulation.set_elite(elite)
+                population.insert(int(uniform(0, len(population))), elite)
+                
+            population = self.symulation.evaluate(population)
+                
             output.append(self.symulation.output(iter, population))
         
         self.plot_summary(output)
