@@ -340,16 +340,14 @@ class Window():
         # Customize the plot
         ax.set_xlabel('Pokolenie')
         ax.set_ylabel('f(x)')
-        ax.set_title('Wykres podsumowujący wartości f(x) dla pokoleń')
+        ax.set_title('Wartości f(x) dla pokoleń')
         ax.legend()
         ax.grid(True)
 
-        # Embed the plot into the Tkinter window using grid
         canvas = FigureCanvasTkAgg(fig, master=self.root)
         canvas_widget = canvas.get_tk_widget()
-        canvas_widget.grid(row=10, column=5, sticky="nsew")
+        canvas_widget.grid(row=9, column=6, sticky="nsew")
 
-        # Configure grid weight for resizing
         self.root.grid_rowconfigure(10, weight=1)
         self.root.grid_columnconfigure(10, weight=1)
         canvas.draw()
