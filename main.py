@@ -2,7 +2,7 @@
 import math
 from random import random, choice, randint, uniform
 import tkinter as tk
-from tkinter import ttk, Tk, Label, Entry, messagebox
+from tkinter import ttk, Tk, Label, Entry, messagebox, BooleanVar
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk) 
@@ -32,6 +32,7 @@ class Individual():
         self.bin_after_mutation = "-"
         self.x_real_after_mutation = "-"
         self.fx_after_mutation = "-"
+        self.gx_after_mutation = ""
         
     def set_random_x(self, a: int, b: int, roundTo: float) -> None:
         self.x_real = round(uniform(a, b), roundTo) 
@@ -132,14 +133,20 @@ class Symulation():
         self.d = d
         self.roundTo = roundTo
         self.population_size = n
-        self.binSize = self.get_bin_size(self.a, self.b, d)
+        self.binSize = self.get_bin_size()
         self.pk = pk
         self.pm = pm
         self.is_elite = is_elite
     
-    def get_bin_size(self, a: int, b: int, d: int) -> int:
-        return math.ceil(math.log(((b-a)/d)+1, 2))
+    def get_bin_size(self) -> int:
+        return math.ceil(math.log(((self.b-self.a)/self.d)+1, 2))
         
+    def set_elite(self, elite: Individual) -> Individual:
+        elite.x_real_after_mutation = elite.x_real
+        elite.fx_after_mutation = elite.fx
+        elite.gx_after_mutation = elite.gx
+        return elite
+    
     def create_population(self) -> list[Individual]:
         population = []
         for i in range(self.population_size):
@@ -270,7 +277,7 @@ class Window():
             pk = float(self.pk_entry.get())
             pm = float(self.pm_entry.get())
             t = int(self.t_entry.get())
-            is_elite = bool(self.elite_box.get())
+            is_elite = bool(self.elite_var.get())
         except:
             messagebox.showerror('Error', 'Enter valid values!')
             
@@ -308,9 +315,9 @@ class Window():
         ax = fig.add_subplot(111)
 
         # Plot the data
-        ax.plot(generations, min_values, label='Min f(x)', marker='o')
         ax.plot(generations, max_values, label='Max f(x)', marker='o')
         ax.plot(generations, avg_values, label='Avg f(x)', marker='o')
+        ax.plot(generations, min_values, label='Min f(x)', marker='o')
 
         # Customize the plot
         ax.set_xlabel('Pokolenie')
@@ -395,8 +402,10 @@ class Window():
         self.t_entry.grid(column=1, row=3)
         self.t_entry.insert(0, "10")
 
-        self.elite_box = ttk.Checkbutton(self.root, text="Elite:")
-        self.elite_box.grid(column=4, row=3)
+        self.elite_var = BooleanVar()
+        self.elite_var.set(False)
+        elite_box = ttk.Checkbutton(self.root, text="Elite:", variable=self.elite_var)
+        elite_box.grid(column=4, row=3)
         
         calc_button = ttk.Button(self.root, text="Calculate", command=self.calc)
         calc_button.grid(column=2, row=8)
