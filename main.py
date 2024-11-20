@@ -1,5 +1,7 @@
 #Matas Pieczulis ID05IO1 21162
 import math
+import numpy as np
+import itertools
 from random import random, choice, randint, uniform
 import tkinter as tk
 from tkinter import ttk, Tk, Label, Entry, messagebox, BooleanVar
