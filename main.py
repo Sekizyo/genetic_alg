@@ -6,6 +6,7 @@ from tkinter import ttk, Tk, Label, Entry, messagebox, BooleanVar
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk) 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class Individual():
     def __init__(self, id: int) -> None:
@@ -267,12 +268,104 @@ class Symulation():
             individual.mutate(self.pm, self.a, self.b, self.binSize, self.roundTo)
         return population
     
+    def run(self, t: int) -> list:
+        output = []
+        population = []
+        elite = None
+        for iter in range(t):
+            population = self.new_population(population)
+            if self.is_elite:
+                population.sort(key=lambda individual: individual.gx, reverse=True)
+                elite = population.pop(0)
+                
+            population = self.selection(population)
+            population, pairs = self.pair_population(population)
+            population = self.mate(population, pairs)
+            population = self.mutation(population)
+            
+            if self.is_elite:
+                elite = self.set_elite(elite)
+                population.insert(int(uniform(0, len(population))), elite)
+                
+            population = self.evaluate(population)
+                
+            output.append(self.output(iter, population))
+            
+        return output
+    
     def output(self, interation: int,  population: list[Individual]) -> list[Individual]:
         min_ = min(individual.fx_after_mutation for individual in population)
         avg_ = sum(individual.fx_after_mutation for individual in population)/len(population)
         max_ = max(individual.fx_after_mutation for individual in population)
         return (interation, min_, avg_, max_)
+ 
+class Tests():
+    def __init__(self, a: int, b: int, d: float, roundTo: int, is_elite) -> None:
+        self.iterations = 10
+        self.a = a
+        self.b = b
+        self.d = d
+        self.roundTo = roundTo
+        self.is_elite = is_elite
+        self.n = [n for n in range(30, 80, 5)]
+        self.pk = np.arange(0.5, 0.9, 0.1)
+        self.pm = np.arange(0.0001, 0.01, 0.0005)
+        self.t = [t for t in range(50, 150, 10)]
+        
+    def run_test(self, nr: int,  n: int, pk: float, pm: float, t: int) -> list:
+        avgMax = 0
+        avgAvg = 0
+        symulation = Symulation(self.a, self.b, n, self.d, self.roundTo, pk, pm, self.is_elite)
+        for i in range(self.iterations):
+            result = symulation.run(t)
+            avgAvg += sum(r[2] for r in result)/len(result)
+            avgMax += max(r[3] for r in result)
+            
+        # print(f"nr: {nr}. {(nr/8000)*100}%", avgAvg/self.iterations, avgAvg/self.iterations, n, pk, pm, t)
+        return avgAvg/self.iterations, avgMax/self.iterations,
     
+    def judge(self, combinations: list) -> list:
+        bestAvg = 0
+        bestMax = 0
+        bestCombination = []
+        for combination in combinations:
+            comb, values = combination
+            avg, max_ = values
+            if avg >= bestAvg and max_ >= bestMax:
+                bestAvg = avg
+                bestMax = max_
+                bestCombination = comb
+        
+        return bestCombination, bestAvg, bestMax
+    
+    def run_tests(self) -> None:
+        results = []
+        combinations = list(itertools.product(self.n, self.pk, self.pm, self.t))
+        
+        def test_runner(i, combination):
+            n, pk, pm, t = combination
+            return (combination, self.run_test(i, n, pk, pm, t))
+        
+        # Use ThreadPoolExecutor for multithreading
+        with ThreadPoolExecutor() as executor:
+            # Submit all tasks
+            future_to_combination = {
+                executor.submit(test_runner, i, combination): combination
+                for i, combination in enumerate(combinations)
+            }
+            
+            # Collect results as tasks complete
+            for future in as_completed(future_to_combination):
+                try:
+                    results.append(future.result())
+                    print(f"nr: {len(results)}. {(len(results)/8000)*100}%")
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+        
+        # Evaluate the best result
+        bestResult = self.judge(results)
+        print(f"Best comb: {bestResult}")
+            
 class Window():
     def __init__(self) -> None:
         self.root = Tk()
@@ -355,31 +448,15 @@ class Window():
     def calc(self) -> None:
         a, b, n, d, roundTo, pk, pm, t, is_elite = self.get_data()
         self.symulation = Symulation(a, b, n, d, roundTo, pk, pm, is_elite)
-        output = []
-        population = []
-        elite = None
-        for iter in range(t):
-            population = self.symulation.new_population(population)
-            if self.symulation.is_elite:
-                population.sort(key=lambda individual: individual.gx, reverse=True)
-                elite = population.pop(0)
-                
-            population = self.symulation.selection(population)
-            population, pairs = self.symulation.pair_population(population)
-            population = self.symulation.mate(population, pairs)
-            population = self.symulation.mutation(population)
-            
-            if self.symulation.is_elite:
-                elite = self.symulation.set_elite(elite)
-                population.insert(int(uniform(0, len(population))), elite)
-                
-            population = self.symulation.evaluate(population)
-                
-            output.append(self.symulation.output(iter, population))
-        
+        output = self.symulation.run(t)
         self.plot_summary(output)
         # self.plot_table(population)
         return
+    
+    def tests(self) -> None:
+        a, b, n, d, roundTo, pk, pm, t, is_elite = self.get_data()
+        tests = Tests(a, b, d, roundTo, is_elite)
+        tests.run_tests()
 
     def draw(self) -> None:
         a_label = Label(self.root, text='a:')
@@ -431,6 +508,9 @@ class Window():
         
         calc_button = ttk.Button(self.root, text="Calculate", command=self.calc)
         calc_button.grid(column=2, row=8)
+        
+        tests_button = ttk.Button(self.root, text="Test", command=self.tests)
+        tests_button.grid(column=3, row=8)
         self.root.mainloop()
 
 if __name__ == "__main__":
