@@ -371,7 +371,7 @@ class Tests():
 class Window():
     def __init__(self) -> None:
         self.root = Tk()
-        self.root.geometry("1700x1000")
+        self.root.geometry("1400x800")
         self.root.title("Algorytm genetyczny - Matas Pieczulis 21162")
 
     def get_data(self) -> list[int]:
@@ -441,25 +441,38 @@ class Window():
 
         canvas = FigureCanvasTkAgg(fig, master=self.root)
         canvas_widget = canvas.get_tk_widget()
-        canvas_widget.grid(row=9, column=6, sticky="nsew")
+        canvas_widget.grid(row=11, column=0, columnspan=5, sticky="nsew")
 
-        self.root.grid_rowconfigure(10, weight=1)
-        self.root.grid_columnconfigure(10, weight=1)
         canvas.draw()
         
     def calc(self) -> None:
+        self.reset_output_labels()
         a, b, n, d, roundTo, pk, pm, t, is_elite = self.get_data()
         self.symulation = Symulation(a, b, n, d, roundTo, pk, pm, is_elite)
         output = self.symulation.run(t)
         self.plot_summary(output)
         # self.plot_table(population)
+        self.set_output_labels(output)
         return
     
     def tests(self) -> None:
         a, b, n, d, roundTo, pk, pm, t, is_elite = self.get_data()
         tests = Tests(a, b, d, roundTo, is_elite)
         tests.run_tests()
+        
+    def reset_output_labels(self):
+        self.iterationLabel.config(text = "Last iteration: ")
+        self.minLabel.config(text = "min: ")
+        self.avgLabel.config(text = "avg: ")
+        self.maxLabel.config(text = "max: ")
 
+    def set_output_labels(self, output: list) -> None:
+        iteration, min_, avg_, max_ = output[-1]
+        self.iterationLabel.config(text = self.iterationLabel.cget("text")+str(iteration+1))
+        self.minLabel.config(text = self.minLabel.cget("text")+str(round(min_, 4)))
+        self.avgLabel.config(text = self.avgLabel.cget("text")+str(round(avg_, 4)))
+        self.maxLabel.config(text = self.maxLabel.cget("text")+str(round(max_, 4)))
+        
     def draw(self) -> None:
         a_label = Label(self.root, text='a:')
         a_label.grid(column=0, row=0)
@@ -477,7 +490,7 @@ class Window():
         n_label.grid(column=0, row=1)
         self.n_entry = Entry(self.root)
         self.n_entry.grid(column=1, row=1)
-        self.n_entry.insert(0, "10")
+        self.n_entry.insert(0, "80")
 
         d_label = Label(self.root, text='d:')
         d_label.grid(column=3, row=1)
@@ -489,22 +502,22 @@ class Window():
         pk_label.grid(column=0, row=2)
         self.pk_entry = Entry(self.root)
         self.pk_entry.grid(column=1, row=2)
-        self.pk_entry.insert(0, "0.5")
+        self.pk_entry.insert(0, "0.6")
 
         pm_label = Label(self.root, text='pm:')
         pm_label.grid(column=3, row=2)
         self.pm_entry = Entry(self.root)
         self.pm_entry.grid(column=4, row=2)
-        self.pm_entry.insert(0, "0.01")
+        self.pm_entry.insert(0, "0.001")
         
         t_label = Label(self.root, text='T:')
         t_label.grid(column=0, row=3)
         self.t_entry = Entry(self.root)
         self.t_entry.grid(column=1, row=3)
-        self.t_entry.insert(0, "10")
+        self.t_entry.insert(0, "120")
 
         self.elite_var = BooleanVar()
-        self.elite_var.set(False)
+        self.elite_var.set(True)
         elite_box = ttk.Checkbutton(self.root, text="Elite:", variable=self.elite_var)
         elite_box.grid(column=4, row=3)
         
@@ -513,6 +526,19 @@ class Window():
         
         tests_button = ttk.Button(self.root, text="Test", command=self.tests)
         tests_button.grid(column=3, row=8)
+        
+        self.iterationLabel = Label(self.root, text="Last iteration: ")
+        self.iterationLabel.grid(column=0, row=9)
+        
+        self.minLabel= Label(self.root, text="min: ")
+        self.minLabel.grid(column=1, row=9)
+        
+        self.avgLabel = Label(self.root, text="avg: ")
+        self.avgLabel.grid(column=2, row=9)
+        
+        self.maxLabel = Label(self.root, text="max: ")
+        self.maxLabel.grid(column=3, row=9)
+        
         self.root.mainloop()
 
 if __name__ == "__main__":
