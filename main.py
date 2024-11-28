@@ -277,7 +277,7 @@ class Symulation():
         for iter in range(t):
             population = self.new_population(population)
             if self.is_elite:
-                population.sort(key=lambda individual: individual.gx, reverse=True)
+                population.sort(key=lambda individual: individual.fx, reverse=True)
                 elite = population.pop(0)
                 
             population = self.selection(population)
@@ -299,7 +299,10 @@ class Symulation():
         min_ = min(individual.fx_after_mutation for individual in population)
         avg_ = sum(individual.fx_after_mutation for individual in population)/len(population)
         max_ = max(individual.fx_after_mutation for individual in population)
-        return (interation, min_, avg_, max_)
+        max_index = max(range(len(population)), key=lambda i: population[i].fx_after_mutation)
+        bestX = population[max_index].x_real_after_mutation
+
+        return (interation, min_, avg_, max_, bestX)
  
 class Tests():
     def __init__(self, a: int, b: int, d: float, roundTo: int, is_elite) -> None:
@@ -350,24 +353,19 @@ class Tests():
             n, pk, pm, t = combination
             return (combination, self.run_test(i, n, pk, pm, t))
         
-        # Use ThreadPoolExecutor for multithreading
         with ThreadPoolExecutor() as executor:
-            # Submit all tasks
             future_to_combination = {
                 executor.submit(test_runner, i, combination): combination
                 for i, combination in enumerate(combinations)
             }
             
-            # Collect results as tasks complete
             for future in as_completed(future_to_combination):
                 try:
                     results.append(future.result())
                 except Exception as e:
                     print(f"An error occurred: {e}")
         
-        # Evaluate the best result
         bestResult = self.judge(results)
-        print(f"Best comb: {bestResult}")
         messagebox.showinfo('Info', f'Najlepsza znaleziona komfiguracja parametrów: N:{bestResult[0][0]}, pk: {bestResult[0][1]}, pm: {bestResult[0][2]}, T: {bestResult[0][3]}, Avg: {bestResult[1]}, Max: {bestResult[2]}, x_real: {self.best_x_real}')
             
 class Window():
@@ -465,16 +463,18 @@ class Window():
         
     def reset_output_labels(self):
         self.iterationLabel.config(text = "Last iteration: ")
-        self.minLabel.config(text = "min: ")
-        self.avgLabel.config(text = "avg: ")
-        self.maxLabel.config(text = "max: ")
+        self.minLabel.config(text = "Min: ")
+        self.avgLabel.config(text = "Avg: ")
+        self.maxLabel.config(text = "Max: ")
+        self.bestLabel.config(text = "Best x real: ")
 
     def set_output_labels(self, output: list) -> None:
-        iteration, min_, avg_, max_ = output[-1]
+        iteration, min_, avg_, max_, bestInv = output[-1]
         self.iterationLabel.config(text = self.iterationLabel.cget("text")+str(iteration+1))
         self.minLabel.config(text = self.minLabel.cget("text")+str(round(min_, 4)))
         self.avgLabel.config(text = self.avgLabel.cget("text")+str(round(avg_, 4)))
         self.maxLabel.config(text = self.maxLabel.cget("text")+str(round(max_, 4)))
+        self.bestLabel.config(text = self.bestLabel.cget("text")+f"{bestInv}")
         
     def draw(self) -> None:
         a_label = Label(self.root, text='a:')
@@ -533,14 +533,17 @@ class Window():
         self.iterationLabel = Label(self.root, text="Last iteration: ")
         self.iterationLabel.grid(column=0, row=9)
         
-        self.minLabel= Label(self.root, text="min: ")
+        self.minLabel= Label(self.root, text="Min: ")
         self.minLabel.grid(column=1, row=9)
         
-        self.avgLabel = Label(self.root, text="avg: ")
+        self.avgLabel = Label(self.root, text="Avg: ")
         self.avgLabel.grid(column=2, row=9)
         
-        self.maxLabel = Label(self.root, text="max: ")
+        self.maxLabel = Label(self.root, text="Max: ")
         self.maxLabel.grid(column=3, row=9)
+        
+        self.bestLabel = Label(self.root, text="Best individual: ")
+        self.bestLabel.grid(column=4, row=9)
         
         self.root.mainloop()
 
