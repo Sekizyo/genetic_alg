@@ -309,10 +309,11 @@ class Tests():
         self.d = d
         self.roundTo = roundTo
         self.is_elite = is_elite
-        self.n = [n for n in range(30, 80, 5)]
+        self.n = [n for n in range(30, 80, 10)]
         self.pk = np.arange(0.5, 0.9, 0.1)
-        self.pm = np.arange(0.0001, 0.01, 0.0005)
+        self.pm = np.arange(0.001, 0.01, 0.001)
         self.t = [t for t in range(50, 150, 10)]
+        self.best_x_real = 0 
         
     def run_test(self, nr: int,  n: int, pk: float, pm: float, t: int) -> list:
         avgMax = 0
@@ -322,8 +323,9 @@ class Tests():
             result = symulation.run(t)
             avgAvg += sum(r[2] for r in result)/len(result)
             avgMax += max(r[3] for r in result)
+            self.best_x_real = max(r[3] for r in result)
             
-        # print(f"nr: {nr}. {(nr/8000)*100}%", avgAvg/self.iterations, avgAvg/self.iterations, n, pk, pm, t)
+        print(f"{(nr/1800)*100}%")
         return avgAvg/self.iterations, avgMax/self.iterations,
     
     def judge(self, combinations: list) -> list:
@@ -360,13 +362,13 @@ class Tests():
             for future in as_completed(future_to_combination):
                 try:
                     results.append(future.result())
-                    print(f"nr: {len(results)}. {(len(results)/8000)*100}%")
                 except Exception as e:
                     print(f"An error occurred: {e}")
         
         # Evaluate the best result
         bestResult = self.judge(results)
         print(f"Best comb: {bestResult}")
+        messagebox.showinfo('Info', f'Najlepsza znaleziona komfiguracja parametrów: N:{bestResult[0][0]}, pk: {bestResult[0][1]}, pm: {bestResult[0][2]}, T: {bestResult[0][3]}, Avg: {bestResult[1]}, Max: {bestResult[2]}, x_real: {self.best_x_real}')
             
 class Window():
     def __init__(self) -> None:
@@ -456,6 +458,7 @@ class Window():
         return
     
     def tests(self) -> None:
+        messagebox.showinfo('Info', 'Test zajmuje około 10min!')
         a, b, n, d, roundTo, pk, pm, t, is_elite = self.get_data()
         tests = Tests(a, b, d, roundTo, is_elite)
         tests.run_tests()
